@@ -41,7 +41,7 @@ public class PointController {
 		@PathVariable(name = "id") long id,
 		@RequestBody long amount
 	) {
-		return pointService.handlePoint(id, amount, TransactionType.CHARGE);
+		return pointService.charge(id, amount);
 	}
 
 	@PatchMapping("{id}/use")
@@ -49,6 +49,6 @@ public class PointController {
 		@PathVariable(name = "id") long id,
 		@RequestBody long amount
 	) {
-		return pointService.handlePoint(id, amount, TransactionType.USE);
+		return pointService.use(id, amount);
 	}
 }
