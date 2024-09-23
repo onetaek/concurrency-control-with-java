@@ -3,6 +3,11 @@ package io.hhplus.tdd.point;
 import static org.assertj.core.api.Assertions.*;
 
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -115,4 +120,65 @@ class PointServiceTest {
 				tuple(id1, 200L, TransactionType.USE)
 			);
 	}
+
+	@Test
+	@DisplayName("동시성 테스트")
+	void handlePointSyncTest() throws InterruptedException {
+		// given
+		Long id1 = ++incrementId;
+		Random random = new Random();
+
+		int countOfThreads = 50; // 요청할 스레드 개수
+		ExecutorService executorService = Executors.newFixedThreadPool(countOfThreads);
+		CountDownLatch countDownLatch = new CountDownLatch(countOfThreads);
+
+		AtomicInteger successCount = new AtomicInteger(); // 성공 횟수
+		AtomicInteger failCount = new AtomicInteger(); // 실패 횟수
+
+		// when
+		for (int i = 0; i < countOfThreads; i++) {
+			executorService.execute(() -> {
+				try {
+					long amount = random.nextInt(500) + 1; // 1 ~ 500 사이의 랜덤 포인트
+					TransactionType transactionType = random.nextBoolean()
+						? TransactionType.CHARGE // 무작위로 충전
+						: TransactionType.USE; // 무작위로 사용
+					pointService.handlePoint(id1, amount, transactionType);
+					successCount.incrementAndGet();
+				} catch (IllegalArgumentException e) {
+					failCount.incrementAndGet();
+				} finally {
+					countDownLatch.countDown();
+				}
+			});
+		}
+		countDownLatch.await(); // 모든 스레드가 완료될 때까지 대기
+		executorService.shutdown();
+
+		// then
+		UserPoint userPoint = userPointTable.selectById(id1);
+		List<PointHistory> pointHistoryList = pointHistoryTable.selectAllByUserId(id1);
+
+		// 충전 포인트 합계
+		long totalCharged = pointHistoryList.stream()
+			.filter(history -> history.type() == TransactionType.CHARGE)
+			.mapToLong(PointHistory::amount)
+			.sum();
+		System.out.println("totalCharged = " + totalCharged);
+
+		// 사용 포인트 합계
+		long totalUsed = pointHistoryList.stream()
+			.filter(history -> history.type() == TransactionType.USE)
+			.mapToLong(PointHistory::amount)
+			.sum();
+		System.out.println("totalUsed = " + totalUsed);
+
+		// (최종 포인트 == 충전 포인트 합계 - 사용 포인트 합계) 검증
+		assertThat(userPoint.point()).isEqualTo(totalCharged - totalUsed);
+		System.out.println("Final userPoint = " + userPoint);
+
+		// (포인트 이력 리스트의 크기 == 성공 횟수) 검증
+		assertThat(pointHistoryList.size()).isEqualTo(successCount.get());
+	}
+
 }
