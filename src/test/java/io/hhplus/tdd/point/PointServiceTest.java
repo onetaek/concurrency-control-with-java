@@ -77,11 +77,11 @@ class PointServiceTest {
 
 	@Test
 	@DisplayName("500, 300을 충전하면 800이 남는다.")
-	void handlePointTransactionWhenCharge() {
+	void chargePointTransactionTest() {
 		//when
 		Long id1 = ++incrementId;
-		pointService.handlePoint(id1, 500, TransactionType.CHARGE);
-		pointService.handlePoint(id1, 300, TransactionType.CHARGE);
+		pointService.charge(id1, 500);
+		pointService.charge(id1, 300);
 
 		//then
 		UserPoint userPoint = userPointTable.selectById(id1);
@@ -100,11 +100,11 @@ class PointServiceTest {
 
 	@Test
 	@DisplayName("500을 충전하고 200을 사용하면 300이 남는다.")
-	void handlePointTransactionWhenUse() {
+	void usePointTransactionTest() {
 		//when
 		Long id1 = ++incrementId;
-		pointService.handlePoint(id1, 500, TransactionType.CHARGE);
-		pointService.handlePoint(id1, 200, TransactionType.USE);
+		pointService.charge(id1, 500); // 500 포인트 충전
+		pointService.use(id1, 200);    // 200 포인트 사용
 
 		//then
 		UserPoint userPoint = userPointTable.selectById(id1);
@@ -123,7 +123,7 @@ class PointServiceTest {
 
 	@Test
 	@DisplayName("동시성 테스트")
-	void handlePointSyncTest() throws InterruptedException {
+	void concurrentChargeAndUseTest() throws InterruptedException {
 		// given
 		Long id1 = ++incrementId;
 		Random random = new Random();
@@ -140,13 +140,14 @@ class PointServiceTest {
 			executorService.execute(() -> {
 				try {
 					long amount = random.nextInt(500) + 1; // 1 ~ 500 사이의 랜덤 포인트
-					TransactionType transactionType = random.nextBoolean()
-						? TransactionType.CHARGE // 무작위로 충전
-						: TransactionType.USE; // 무작위로 사용
-					pointService.handlePoint(id1, amount, transactionType);
+					if (random.nextBoolean()) {
+						pointService.charge(id1, amount); // 무작위로 충전
+					} else {
+						pointService.use(id1, amount);    // 무작위로 사용
+					}
 					successCount.incrementAndGet();
 				} catch (IllegalArgumentException e) {
-					failCount.incrementAndGet();
+					failCount.incrementAndGet(); // 사용 실패 시 예외 발생
 				} finally {
 					countDownLatch.countDown();
 				}
