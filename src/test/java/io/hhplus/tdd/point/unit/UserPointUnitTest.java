@@ -1,14 +1,15 @@
-package io.hhplus.tdd.point;
+package io.hhplus.tdd.point.unit;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class UserPointTest {
+import io.hhplus.tdd.point.TransactionType;
+import io.hhplus.tdd.point.UserPoint;
+
+class UserPointUnitTest {
 
 	@Test
 	@DisplayName("amount 값이 0이면 예외발생")
@@ -97,4 +98,48 @@ class UserPointTest {
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessage("사용 가능한 포인트가 부족합니다.");
 	}
+
+	@Test
+	@DisplayName("충전시 포인트 정상 증가")
+	void chargePoints() {
+		// given
+		var userPoint = new UserPoint(1L, 100L, System.currentTimeMillis());
+		var amountToCharge = 50L;
+
+		// when
+		var result = userPoint.charge(amountToCharge);
+
+		// then
+		assertThat(result.point()).isEqualTo(150L);
+	}
+
+	@Test
+	@DisplayName("사용시 포인트 정상 감소")
+	void usePoints() {
+		// given
+		var userPoint = new UserPoint(1L, 100L, System.currentTimeMillis());
+		var amountToUse = 50L;
+
+		// when
+		var result = userPoint.use(amountToUse);
+
+		// then
+		assertThat(result.point()).isEqualTo(50L);
+	}
+
+	@Test
+	@DisplayName("사용 시 포인트가 0 이하로 떨어지면 예외 발생")
+	void usePointsOverLimit() {
+		// given
+		var userPoint = new UserPoint(1L, 30L, System.currentTimeMillis());
+		var amountToUse = 50L;
+		var newPoint = userPoint.point() - amountToUse;
+
+		// when // then
+		assertThatThrownBy(
+			() -> UserPoint.validate(amountToUse, userPoint.point(), newPoint, TransactionType.USE, 1000L))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("사용 가능한 포인트가 부족합니다.");
+	}
+
 }
