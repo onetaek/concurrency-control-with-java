@@ -23,8 +23,7 @@
 
 ## 동시성 제어 방식에 대한 분석 및 보고서
 <div aglin="center">  
-  <a href="https://velog.io/@wontaekoh/Jenkins%EC%99%80-Docker%EB%A1%9C-AWS%EC%84%9C%EB%B2%84%EC%97%90-%EC%9E%90%EB%8F%99-%EB%B0%B0%ED%8F%AC%ED%95%98%EA%B8%B0">
+  <a href="https://velog.io/@wontaekoh/%EB%8F%99%EC%8B%9C%EC%84%B1-%EB%AC%B8%EC%A0%9C-%EB%B0%8F-Java%EC%97%90%EC%84%9C%EC%9D%98-%ED%95%B4%EA%B2%B0%EB%B0%A9%EB%B2%95">
     <img src="https://velog-readme-stats.vercel.app/api?name=wontaekoh&slug=동시성-문제-및-Java에서의-해결방법" alt="Velog's GitHub stats: 동시성-문제-및-Java에서의-해결방법" />
   </a>
-  <img src="https://github.com/user-attachments/assets/d0c7ed89-9d56-42e2-8be4-d9c4081c446f" />
 </div>
